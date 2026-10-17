@@ -21,7 +21,7 @@ public class ExampleModClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // 1. Prime Client Engine: Auto-Sprint, FullBright, FPS Booster & CPS
+        // 1. Prime Client Engine: Auto-Sprint, FullBright, Mobile FPS Booster & CPS
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
 
@@ -30,12 +30,12 @@ public class ExampleModClient implements ClientModInitializer {
                 client.player.setSprinting(true);
             }
 
-            // FullBright
+            // FullBright (Night Vision)
             if (fullBright) {
                 client.options.gamma().set(16.0);
             }
 
-            // Mobile FPS Booster (Disables entity shadows)
+            // Mobile FPS Booster (Disables heavy entity shadows to stop lag)
             if (fpsBoost) {
                 client.options.entityShadows().set(false);
             }
@@ -50,19 +50,19 @@ public class ExampleModClient implements ClientModInitializer {
             leftClicks.removeIf(time -> now - time > 1000);
         });
 
-        // 2. Render In-Game HUD, FPS, CPS, Coords & Keystrokes
+        // 2. Render In-Game HUD, FPS, CPS, Coords & Keystrokes Overlay
         HudRenderCallback.EVENT.register((graphics, tickDelta) -> {
             Minecraft mc = Minecraft.getInstance();
             if (mc.options.hideGui || !showHud) return;
 
-            // Watermark & FPS Box
+            // Dawn-Style Watermark & FPS Box
             String badge = "PRIME CLIENT  |  " + mc.getFps() + " FPS  |  " + leftClicks.size() + " CPS";
             int width = mc.font.width(badge) + 16;
             graphics.fill(10, 10, 10 + width, 28, 0xC0101015);
-            graphics.fill(10, 10, 13, 28, 0xFF00E5FF); // Cyan Accent Line
+            graphics.fill(10, 10, 13, 28, 0xFF00E5FF); // Dawn Cyan Accent Line
             graphics.drawString(mc.font, badge, 18, 16, 0xFFFFFFFF, true);
 
-            // Coordinates Box
+            // Coordinates Box (XYZ)
             if (mc.player != null) {
                 String coords = String.format("XYZ: %d, %d, %d", (int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
                 int cWidth = mc.font.width(coords) + 16;
@@ -71,7 +71,7 @@ public class ExampleModClient implements ClientModInitializer {
                 graphics.drawString(mc.font, coords, 18, 37, 0xFFCCCCCC, true);
             }
 
-            // Keystrokes UI (W, A, S, D)
+            // Keystrokes UI (W, A, S, D Boxes)
             if (showKeystrokes) {
                 int kx = 10;
                 int ky = 53;
