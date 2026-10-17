@@ -3,8 +3,8 @@ package com.example.client;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.DrawContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,27 +21,27 @@ public class ExampleModClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // 1. Prime Client Engine: Auto-Sprint, FullBright, Mobile FPS Booster & CPS
+        // 1. Prime Client Engine: Auto-Sprint, FullBright, FPS Booster & CPS Tracker
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
 
             // Auto-Sprint
-            if (autoSprint && client.options.keyUp.isDown()) {
+            if (autoSprint && client.options.forwardKey.isPressed()) {
                 client.player.setSprinting(true);
             }
 
-            // FullBright (Night Vision)
+            // FullBright
             if (fullBright) {
-                client.options.gamma().set(16.0);
+                client.options.getGamma().setValue(16.0);
             }
 
-            // Mobile FPS Booster (Disables heavy entity shadows to stop lag)
+            // Mobile FPS Booster (Disables entity shadows)
             if (fpsBoost) {
-                client.options.entityShadows().set(false);
+                client.options.getEntityShadows().setValue(false);
             }
 
             // CPS Tracker
-            boolean attackPressed = client.options.keyAttack.isDown();
+            boolean attackPressed = client.options.attackKey.isPressed();
             if (attackPressed && !wasAttackPressed) {
                 leftClicks.add(System.currentTimeMillis());
             }
@@ -50,44 +50,44 @@ public class ExampleModClient implements ClientModInitializer {
             leftClicks.removeIf(time -> now - time > 1000);
         });
 
-        // 2. Render In-Game HUD, FPS, CPS, Coords & Keystrokes Overlay
-        HudRenderCallback.EVENT.register((graphics, tickDelta) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc.options.hideGui || !showHud) return;
+        // 2. Render In-Game HUD, FPS, CPS, Coords & Keystrokes
+        HudRenderCallback.EVENT.register((context, tickDelta) -> {
+            MinecraftClient mc = MinecraftClient.getInstance();
+            if (mc.options.hudHidden || !showHud) return;
 
-            // Dawn-Style Watermark & FPS Box
-            String badge = "PRIME CLIENT  |  " + mc.getFps() + " FPS  |  " + leftClicks.size() + " CPS";
-            int width = mc.font.width(badge) + 16;
-            graphics.fill(10, 10, 10 + width, 28, 0xC0101015);
-            graphics.fill(10, 10, 13, 28, 0xFF00E5FF); // Dawn Cyan Accent Line
-            graphics.drawString(mc.font, badge, 18, 16, 0xFFFFFFFF, true);
+            // Watermark & FPS Box
+            String badge = "PRIME CLIENT  |  " + mc.getCurrentFps() + " FPS  |  " + leftClicks.size() + " CPS";
+            int width = mc.textRenderer.getWidth(badge) + 16;
+            context.fill(10, 10, 10 + width, 28, 0xC0101015);
+            context.fill(10, 10, 13, 28, 0xFF00E5FF); // Cyan Accent Line
+            context.drawText(mc.textRenderer, badge, 18, 16, 0xFFFFFFFF, true);
 
             // Coordinates Box (XYZ)
             if (mc.player != null) {
                 String coords = String.format("XYZ: %d, %d, %d", (int)mc.player.getX(), (int)mc.player.getY(), (int)mc.player.getZ());
-                int cWidth = mc.font.width(coords) + 16;
-                graphics.fill(10, 31, 10 + cWidth, 47, 0xC0101015);
-                graphics.fill(10, 31, 13, 47, 0xFF00E5FF);
-                graphics.drawString(mc.font, coords, 18, 37, 0xFFCCCCCC, true);
+                int cWidth = mc.textRenderer.getWidth(coords) + 16;
+                context.fill(10, 31, 10 + cWidth, 47, 0xC0101015);
+                context.fill(10, 31, 13, 47, 0xFF00E5FF);
+                context.drawText(mc.textRenderer, coords, 18, 37, 0xFFCCCCCC, true);
             }
 
             // Keystrokes UI (W, A, S, D Boxes)
             if (showKeystrokes) {
                 int kx = 10;
                 int ky = 53;
-                drawKey(graphics, mc, "W", kx + 22, ky, 20, 20, mc.options.keyUp.isDown());
-                drawKey(graphics, mc, "A", kx, ky + 22, 20, 20, mc.options.keyLeft.isDown());
-                drawKey(graphics, mc, "S", kx + 22, ky + 22, 20, 20, mc.options.keyDown.isDown());
-                drawKey(graphics, mc, "D", kx + 44, ky + 22, 20, 20, mc.options.keyRight.isDown());
+                drawKey(context, mc, "W", kx + 22, ky, 20, 20, mc.options.forwardKey.isPressed());
+                drawKey(context, mc, "A", kx, ky + 22, 20, 20, mc.options.leftKey.isPressed());
+                drawKey(context, mc, "S", kx + 22, ky + 22, 20, 20, mc.options.backKey.isPressed());
+                drawKey(context, mc, "D", kx + 44, ky + 22, 20, 20, mc.options.rightKey.isPressed());
             }
         });
     }
 
-    private static void drawKey(GuiGraphics graphics, Minecraft mc, String label, int x, int y, int w, int h, boolean pressed) {
+    private static void drawKey(DrawContext context, MinecraftClient mc, String label, int x, int y, int w, int h, boolean pressed) {
         int bg = pressed ? 0xB000E5FF : 0xC0101015;
         int fg = pressed ? 0xFF000000 : 0xFFFFFFFF;
-        graphics.fill(x, y, x + w, y + h, bg);
-        int tw = mc.font.width(label);
-        graphics.drawString(mc.font, label, x + (w - tw) / 2, y + (h - 8) / 2, fg, true);
+        context.fill(x, y, x + w, y + h, bg);
+        int tw = mc.textRenderer.getWidth(label);
+        context.drawText(mc.textRenderer, label, x + (w - tw) / 2, y + (h - 8) / 2, fg, true);
     }
 }
