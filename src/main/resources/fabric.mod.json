@@ -3,15 +3,12 @@
   "id": "primeclient",
   "version": "1.0.0",
   "name": "Prime Client",
-  "description": "Prime Client Dawn Edition - Full Visual HUD & Keystrokes",
+  "description": "Dawn-style client with FPS and Keystrokes",
   "entrypoints": {
     "client": [
       "com.example.client.ExampleModClient"
     ]
   },
-  "mixins": [
-    "primeclient.mixins.json"
-  ],
   "depends": {
     "fabricloader": ">=0.15.0",
     "minecraft": "~1.21",
